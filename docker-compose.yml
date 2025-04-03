@@ -1,0 +1,62 @@
+services:
+
+  kafka:
+    image: bitnami/kafka:latest
+    ports:
+      - "9092:9092"
+      - "9093:9093"  # Controller Votes im KRaft-Modus
+    environment:
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      - KAFKA_CFG_LOG_DIRS=/bitnami/kafka/data
+
+
+  spark:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.spark
+    environment:
+      - DELTA_OUTPUT_PATH=data/processed/stream_delta/
+      - KAFKA_BROKER=kafka:9092
+      - KAFKA_TOPIC=vehicle_events
+    volumes:
+      - ./data:/app/data
+      - ./src:/app/src
+    depends_on:
+      - kafka
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    ports:
+      - "5050:5000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5050
+    volumes:
+      - ./mlruns:/mlflow/mlruns
+    command: >
+      mlflow server
+      --backend-store-uri sqlite:///mlflow.db
+      --default-artifact-root /mlflow/mlruns
+      --host 0.0.0.0
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5050
+      - MODEL_NAME=rf_predictive_model
+      - MODEL_STAGE=Production
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - mlflow
+    command: uvicorn src.serving.api:app --host 0.0.0.0 --port 8000 --reload
+

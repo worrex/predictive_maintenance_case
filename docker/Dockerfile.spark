@@ -1,0 +1,36 @@
+FROM bitnami/spark:3.4.1
+
+LABEL maintainer="Paul"
+
+# === ENV Variablen
+ENV SPARK_VERSION=3.4.1
+ENV SCALA_VERSION=2.12
+ENV KAFKA_VERSION=3.5.1
+ENV DELTA_VERSION=2.4.0
+
+# === Arbeitsverzeichnis
+WORKDIR /app
+
+# === Kopiere deinen Python-Code ins Image
+COPY ./src /app/src
+COPY requirements.txt /app/requirements.txt
+
+# === Python Dependencies
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# === Kafka Connector (Structured Streaming)
+RUN curl -L -o /opt/bitnami/spark/jars/spark-sql-kafka-0-10_${SCALA_VERSION}-${SPARK_VERSION}.jar \
+    https://repo1.maven.org/maven2/org/apache/spark/spark-sql-kafka-0-10_${SCALA_VERSION}/${SPARK_VERSION}/spark-sql-kafka-0-10_${SCALA_VERSION}-${SPARK_VERSION}.jar && \
+    curl -L -o /opt/bitnami/spark/jars/spark-token-provider-kafka-0-10_${SCALA_VERSION}-${SPARK_VERSION}.jar \
+    https://repo1.maven.org/maven2/org/apache/spark/spark-token-provider-kafka-0-10_${SCALA_VERSION}/${SPARK_VERSION}/spark-token-provider-kafka-0-10_${SCALA_VERSION}-${SPARK_VERSION}.jar && \
+    curl -L -o /opt/bitnami/spark/jars/kafka-clients-${KAFKA_VERSION}.jar \
+    https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/${KAFKA_VERSION}/kafka-clients-${KAFKA_VERSION}.jar
+
+# === Delta Lake Support
+RUN curl -L -o /opt/bitnami/spark/jars/delta-core_${SCALA_VERSION}-${DELTA_VERSION}.jar \
+    https://repo1.maven.org/maven2/io/delta/delta-core_${SCALA_VERSION}/${DELTA_VERSION}/delta-core_${SCALA_VERSION}-${DELTA_VERSION}.jar && \
+    curl -L -o /opt/bitnami/spark/jars/delta-storage-${DELTA_VERSION}.jar \
+    https://repo1.maven.org/maven2/io/delta/delta-storage/${DELTA_VERSION}/delta-storage-${DELTA_VERSION}.jar
+
+# === Default Kommando (wird im Compose überschrieben)
+CMD ["tail", "-f", "/dev/null"]

@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+mlflow
+pyspark==3.4.1
+delta-spark==2.4.0
+pydantic
+pandas
+requests
+python-dotenv
+kafka-python
+scikit-learn
+pyarrow

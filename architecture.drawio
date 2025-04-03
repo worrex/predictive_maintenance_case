@@ -1,0 +1,58 @@
+┌────────────────────┐
+│ Sensor Data Source │ ◄──── CSV / Simulation
+└────────┬───────────┘
+         │
+         ▼
+┌────────────────────┐
+│ Kafka Topic        │  ← vehicle_events
+│ (vehicle_id, temp) │
+└────────┬───────────┘
+         │
+         ▼
+┌────────────────────────────────────┐
+│ Spark Structured Streaming         │
+│ - Ingestion                        │
+│ - Feature Engineering (Windowing) │
+│ - Delta Write                     │
+└────────┬──────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ Delta Lake (Stream Output)│ ← z.B. data/processed/stream_delta/
+└────────┬───────────────────┘
+         │
+         ▼
+┌────────────────────────────────────┐
+│ Spark Batch Job (Airflow Task)     │
+│ - Aggregation Tagesbasis           │
+│ - Speichern als Featureset         │
+└────────┬──────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ Delta Lake (Batch Output)  │ ← z.B. data/processed/batch_features/
+└────────┬───────────────────┘
+         │
+         ▼
+┌────────────────────────────────────┐
+│ Model Training (scikit-learn)      │
+│ - Feature Input                    │
+│ - Label Generierung                │
+│ - Logging mit MLflow               │
+└────────┬───────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ MLflow Model Registry      │ ← Versionierung, Staging, Prod
+└────────┬───────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ FastAPI Inference API      │ ← Production Model via MLflow
+│ POST /predict              │
+└────────┬───────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ Client (predict.py, App)   │
+└────────────────────────────┘

@@ -1,0 +1,38 @@
+# === General Project Settings ===
+project_name: predictive_maintenance_case
+timezone: Europe/Berlin
+
+# === Kafka Streaming ===
+kafka:
+  broker: kafka:9092
+  topic: vehicle_events
+
+# === Data Paths ===
+paths:
+  raw_sensor_data: data/raw/raw_sensors.csv
+  delta_stream_output: data/processed/stream_delta/
+  batch_feature_output: data/processed/batch_features/
+
+# === MLflow Tracking ===
+mlflow:
+  tracking_uri: http://mlflow:5000
+  experiment_name: predictive_maintenance
+  model_name: rf_predictive_model
+  model_stage: Production
+
+# === API Settings ===
+api:
+  host: 0.0.0.0
+  port: 8000
+  predict_url: http://localhost:8000/predict
+
+# === Simulation Settings ===
+simulation:
+  interval: 0.2
+
+# === Training Settings ===
+training:
+  target_column: label
+  stratify: true
+  random_state: 42
+  threshold_error_sum: 2
